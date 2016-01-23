@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="kodi_ip"
+        android:title="Kodi IP"/>
+    <EditTextPreference
+        android:key="kodi_port"
+        android:title="Kodi port"/>
+</PreferenceScreen>
