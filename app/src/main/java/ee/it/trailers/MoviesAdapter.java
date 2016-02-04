@@ -1,11 +1,10 @@
 package ee.it.trailers;
 
-import android.content.Context;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -20,8 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import ee.it.trailers.tmdb.DiscoverResult;
-import ee.it.trailers.tmdb.Genres;
+import ee.it.trailers.tmdb.*;
 import ee.it.trailers.tmdb.Movie;
 import rx.Observable;
 import rx.Subscriber;
@@ -30,10 +28,14 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
-import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.SerialSubscription;
+import rx.subscriptions.Subscriptions;
 
-public class MyAdapter extends BaseAdapter {
+public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder> {
+    public interface OnMovieSelectedListener {
+        void onMovieSelected(Observable<Movie> movieObservable);
+    }
+
     private static final int PAGE_SIZE = 20;
     private final OkHttpClient mHttpClient;
     private final Gson mGson;
@@ -41,10 +43,12 @@ public class MyAdapter extends BaseAdapter {
     private final int mYear;
     private final List<Integer> mGenreFilter;
     private int mCount;
+    private final OnMovieSelectedListener mMovieSelectedListener;
     private final Observable<Genres> mGenres;
-    private final List<Observable<List<Movie>>> mObservables = new ArrayList<>();
+    private final List<Observable<List<ee.it.trailers.tmdb.Movie>>> mObservables = new ArrayList<>();
 
-    public MyAdapter(MyApplication app, int year, List<Integer> genreFilter) {
+    public MoviesAdapter(MyApplication app, int year, List<Integer> genreFilter,
+                         OnMovieSelectedListener movieSelectedListener) {
         Log.i("foobar", "creating adapter");
         mHttpClient = app.httpClient();
         mGson = app.gson();
@@ -52,85 +56,32 @@ public class MyAdapter extends BaseAdapter {
         mGenres = app.movieGenres();
         mYear = year;
         mGenreFilter = genreFilter;
+        mMovieSelectedListener = movieSelectedListener;
 
         initObservables();
     }
 
     @Override
-    public int getCount() {
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_item,
+                parent, false);
+        return new ViewHolder(view, mMovieSelectedListener);
+    }
+
+    @Override
+    public void onBindViewHolder(final ViewHolder holder, int position) {
+        holder.bindMovie(loadMovie(position), mPicasso);
+    }
+
+    @Override
+    public int getItemCount() {
         return mCount;
     }
 
     @Override
-    public Object getItem(int position) {
-        return null;
-    }
-
-    @Override
-    public long getItemId(int position) {
-        return position;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        final View view;
-        final ViewHolder holder;
-        if (convertView != null) {
-            view = convertView;
-            holder = (ViewHolder) convertView.getTag();
-        } else {
-            LayoutInflater inflater = (LayoutInflater) parent.getContext().getSystemService
-                    (Context.LAYOUT_INFLATER_SERVICE);
-            view = inflater.inflate(R.layout.movie_item, parent, false);
-
-            holder = new ViewHolder();
-            holder.poster = (ImageView) view.findViewById(R.id.poster);
-            holder.title = (TextView) view.findViewById(R.id.title);
-            holder.genre = (TextView) view.findViewById(R.id.genre);
-            holder.director = (TextView) view.findViewById(R.id.director);
-            holder.actors = (TextView) view.findViewById(R.id.actors);
-            holder.releaseDate = (TextView) view.findViewById(R.id.release_date);
-
-            view.setTag(holder);
-        }
-
-        holder.poster.setImageBitmap(null);
-        holder.title.setText("");
-        holder.genre.setText("");
-        holder.releaseDate.setText("");
-
-        final CompositeSubscription sub = new CompositeSubscription();
-        holder.sub.set(sub);
-
-        final Subscription movieSub = loadMovie(position)
-                .subscribe(new Action1<Movie>() {
-                    @Override
-                    public void call(final Movie movie) {
-                        holder.title.setText(movie.title);
-                        //holder.director.setText(movie.directorsString());
-                        //holder.actors.setText(movie.actorsString());
-                        holder.releaseDate.setText(movie.releaseDate);
-
-                        final Subscription genreSub = mGenres.observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Action1<Genres>() {
-                                    @Override
-                                    public void call(Genres genres) {
-                                        holder.genre.setText(movie.genres(genres));
-                                    }
-                                });
-
-                        sub.add(genreSub);
-
-                        mPicasso.load(MyApplication.POSTERS_URL + movie.posterPath)
-                                .resize(200, 200)
-                                .centerCrop()
-                                .into(holder.poster);
-                    }
-                });
-
-        sub.add(movieSub);
-
-        return view;
+    public void onViewRecycled(ViewHolder holder) {
+        holder.reset(mPicasso);
+        super.onViewRecycled(holder);
     }
 
     public Observable<Movie> loadMovie(int position) {
@@ -155,10 +106,10 @@ public class MyAdapter extends BaseAdapter {
                     public void call(DiscoverResult discoverResult) {
                         mCount = discoverResult.totalResults;
 
-                        final Observable<List<Movie>> page0 = Observable.just(discoverResult)
-                                .map(new Func1<DiscoverResult, List<Movie>>() {
+                        final Observable<List<ee.it.trailers.tmdb.Movie>> page0 = Observable.just(discoverResult)
+                                .map(new Func1<DiscoverResult, List<ee.it.trailers.tmdb.Movie>>() {
                                     @Override
-                                    public List<Movie> call(DiscoverResult discoverResult) {
+                                    public List<ee.it.trailers.tmdb.Movie> call(DiscoverResult discoverResult) {
                                         return discoverResult.results;
                                     }
                                 })
@@ -167,7 +118,7 @@ public class MyAdapter extends BaseAdapter {
                         mObservables.add(page0);
 
                         for (int page = 0; page < discoverResult.totalPages; page++) {
-                            final Observable<List<Movie>> o = loadPage(page + 2).cache(1);
+                            final Observable<List<ee.it.trailers.tmdb.Movie>> o = loadPage(page + 2).cache(1);
                             mObservables.add(o);
                         }
 
@@ -176,11 +127,11 @@ public class MyAdapter extends BaseAdapter {
                 });
     }
 
-    Observable<List<Movie>> loadPage(int page) {
+    Observable<List<ee.it.trailers.tmdb.Movie>> loadPage(int page) {
         return discoverMovies(mHttpClient, mGson, mYear, mGenreFilter, page)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .map(new Func1<DiscoverResult, List<Movie>>() {
+                .map(new Func1<DiscoverResult, List<ee.it.trailers.tmdb.Movie>>() {
                     @Override
                     public List<Movie> call(DiscoverResult discoverResult) {
                         return discoverResult.results;
@@ -247,8 +198,9 @@ public class MyAdapter extends BaseAdapter {
         });
     }
 
-    static class ViewHolder {
-        final SerialSubscription sub = new SerialSubscription();
+    public static class ViewHolder extends RecyclerView.ViewHolder{
+        private final SerialSubscription mSub = new SerialSubscription();
+        private Observable<Movie> mObservable = Observable.empty();
 
         ImageView poster;
         TextView title;
@@ -256,5 +208,66 @@ public class MyAdapter extends BaseAdapter {
         TextView director;
         TextView actors;
         TextView releaseDate;
+
+        public ViewHolder(final View view, final OnMovieSelectedListener listener) {
+            super(view);
+
+            poster = (ImageView) view.findViewById(R.id.poster);
+            title = (TextView) view.findViewById(R.id.title);
+            genre = (TextView) view.findViewById(R.id.genre);
+            director = (TextView) view.findViewById(R.id.director);
+            actors = (TextView) view.findViewById(R.id.actors);
+            releaseDate = (TextView) view.findViewById(R.id.release_date);
+
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (listener != null) {
+                        listener.onMovieSelected(mObservable);
+                    }
+                }
+            });
+        }
+
+        public void bindMovie(Observable<Movie> movieObservable, final Picasso picasso) {
+            mObservable = movieObservable;
+            final Subscription sub = mObservable.subscribe(new Action1<Movie>() {
+                @Override
+                public void call(Movie movie) {
+                    bindMovie(movie, picasso);
+                }
+            });
+
+            mSub.set(sub);
+        }
+
+        public void bindMovie(final Movie movie, Picasso picasso) {
+            title.setText(movie.title);
+            //director.setText(movie.directorsString());
+            //actors.setText(movie.actorsString());
+            releaseDate.setText(movie.releaseDate);
+
+            // FIXME:
+//            final Subscription genreSub = mGenres.observeOn(AndroidSchedulers.mainThread())
+//                    .subscribe(new Action1<Genres>() {
+//                        @Override
+//                        public void call(Genres genres) {
+//                            genre.setText(movie.genres(genres));
+//                        }
+//                    });
+//
+//            sub.add(genreSub);
+
+            picasso.load(MyApplication.POSTERS_URL + movie.posterPath)
+                    .resize(200, 200)
+                    .centerCrop()
+                    .into(poster);
+        }
+
+        public void reset(Picasso picasso) {
+            picasso.cancelRequest(poster);
+            mSub.set(Subscriptions.empty());
+            mObservable = Observable.empty();
+        }
     }
 }

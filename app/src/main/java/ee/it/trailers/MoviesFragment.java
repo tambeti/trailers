@@ -2,25 +2,27 @@ package ee.it.trailers;
 
 import android.app.Activity;
 import android.app.DialogFragment;
-import android.app.ListFragment;
+import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ListView;
+import android.view.ViewGroup;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 import ee.it.trailers.tmdb.Movie;
+import rx.Observable;
 import rx.functions.Action1;
 
-public class MoviesFragment extends ListFragment {
+public class MoviesFragment extends Fragment implements MoviesAdapter.OnMovieSelectedListener {
     public interface OnMovieSelected {
         void onMovieSelected(Movie movie);
     }
@@ -28,6 +30,7 @@ public class MoviesFragment extends ListFragment {
     private static final int REQUEST_CODE_PICK_YEAR = 1;
     private static final int REQUEST_CODE_PICK_GENRE = 2;
 
+    private RecyclerView mRecyclerView;
     private OnMovieSelected mListener;
     private int mSelectedYear;
     private List<Integer> mGenres;
@@ -42,24 +45,19 @@ public class MoviesFragment extends ListFragment {
         }
     }
 
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.movies_fragment, container, false);
+    }
+
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        final ListView listView = getListView();
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                final MyAdapter adapter = (MyAdapter) listView.getAdapter();
-                adapter.loadMovie(position)
-                        .subscribe(new Action1<Movie>() {
-                            @Override
-                            public void call(Movie movie) {
-                                mListener.onMovieSelected(movie);
-                            }
-                        });
-            }
-        });
+        mRecyclerView = (RecyclerView) view.findViewById(R.id.movies_list);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(view.getContext()));
+        mRecyclerView.setHasFixedSize(true);
     }
 
     @Override
@@ -135,6 +133,17 @@ public class MoviesFragment extends ListFragment {
         }
     }
 
+    @Override
+    public void onMovieSelected(Observable<Movie> movieObservable) {
+        movieObservable
+                .subscribe(new Action1<Movie>() {
+                    @Override
+                    public void call(Movie movie) {
+                        mListener.onMovieSelected(movie);
+                    }
+                });
+    }
+
     private void onYearChanged(int year) {
         if (mSelectedYear != year) {
             mSelectedYear = year;
@@ -144,7 +153,7 @@ public class MoviesFragment extends ListFragment {
 
     private void reloadData() {
         final MyApplication app = (MyApplication) getActivity().getApplicationContext();
-        final MyAdapter adapter = new MyAdapter(app, mSelectedYear, mGenres);
-        setListAdapter(adapter);
+        final MoviesAdapter adapter = new MoviesAdapter(app, mSelectedYear, mGenres, this);
+        mRecyclerView.setAdapter(adapter);
     }
 }
