@@ -70,10 +70,21 @@ public class Pulsar {
         });
     }
 
+    public String trailerUrl(String source) {
+        final Uri uri = mBaseUrl.buildUpon()
+                .appendPath("youtube")
+                .appendPath(source)
+                .build();
+        return uri.toString();
+    }
     public void play(Movie movie) {
+        play(movie.id);
+    }
+
+    public void play(String imdbId) {
         final Uri uri = mBaseUrl.buildUpon()
                 .appendPath("movie")
-                .appendPath(movie.id)
+                .appendPath(imdbId)
                 .appendPath("play")
                 .build();
         final Request request = new Request.Builder()

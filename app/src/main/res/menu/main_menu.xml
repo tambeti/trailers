@@ -4,6 +4,9 @@
     <item android:id="@+id/year_selector"
           android:title="2014"
           app:showAsAction="ifRoom"/>
+    <item android:id="@+id/genre_selector"
+          android:title="Genres"
+          app:showAsAction="ifRoom"/>
     <item android:id="@+id/settings"
           android:title="Settings"
         app:showAsAction="never"/>

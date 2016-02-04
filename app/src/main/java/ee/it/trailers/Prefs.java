@@ -4,10 +4,17 @@ import android.content.Context;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 public class Prefs {
     private static final String KEY_KODI_IP = "kodi_ip";
     private static final String KEY_KODI_PORT = "kodi_port";
     private static final String KEY_YEAR = "year";
+    private static final String KEY_GENRES = "genres";
     private static final int DEFAULT_PORT = 8080;
     private static final String TAG = Prefs.class.getSimpleName();
 
@@ -40,6 +47,30 @@ public class Prefs {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putInt(KEY_YEAR, value)
+                .apply();
+    }
+
+    static List<Integer> genres(Context context) {
+        final Set<String> set = PreferenceManager.getDefaultSharedPreferences(context)
+                .getStringSet(KEY_GENRES, Collections.<String>emptySet());
+
+        final List<Integer> list = new ArrayList<>(set.size());
+        for (String s : set) {
+            list.add(Integer.parseInt(s));
+        }
+
+        return list;
+    }
+
+    static void genres(Context context, List<Integer> value) {
+        final Set<String> set = new HashSet<>();
+        for (Integer i : value) {
+            set.add(i.toString());
+        }
+
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putStringSet(KEY_GENRES, set)
                 .apply();
     }
 }
