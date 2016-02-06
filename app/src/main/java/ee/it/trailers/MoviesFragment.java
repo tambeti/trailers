@@ -69,7 +69,13 @@ public class MoviesFragment extends Fragment implements MoviesAdapter.OnMovieSel
         final Activity activity = getActivity();
         activity.invalidateOptionsMenu();
         mGenres = Prefs.genres(activity);
-        onYearChanged(Prefs.year(activity));
+        mSelectedYear = Prefs.year(activity);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        reloadData();
     }
 
     @Override
