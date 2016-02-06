@@ -28,6 +28,7 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.SerialSubscription;
 import rx.subscriptions.Subscriptions;
@@ -71,7 +72,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
-        holder.bindMovie(loadMovie(position), mPicasso);
+        holder.bindMovie(loadMovie(position), mGenres, mPicasso);
     }
 
     @Override
@@ -199,6 +200,16 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
         });
     }
 
+    private static class MovieWithGenres {
+        final Movie movie;
+        final Genres genres;
+
+        public MovieWithGenres(Movie movie, Genres genres) {
+            this.movie = movie;
+            this.genres = genres;
+        }
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder{
         private final SerialSubscription mSub = new SerialSubscription();
         private Observable<Movie> mObservable = Observable.empty();
@@ -230,34 +241,35 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
             });
         }
 
-        public void bindMovie(Observable<Movie> movieObservable, final Picasso picasso) {
+        public void bindMovie(Observable<Movie> movieObservable, Observable<Genres> genresObservable,
+                              final Picasso picasso) {
             mObservable = movieObservable;
-            final Subscription sub = mObservable.subscribe(new Action1<Movie>() {
-                @Override
-                public void call(Movie movie) {
-                    bindMovie(movie, picasso);
-                }
-            });
+
+            final Subscription sub = Observable.zip(genresObservable, movieObservable,
+                    new Func2<Genres, Movie, MovieWithGenres>() {
+                        @Override
+                        public MovieWithGenres call(Genres genres, Movie movie) {
+                            return new MovieWithGenres(movie, genres);
+                        }
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Action1<MovieWithGenres>() {
+                        @Override
+                        public void call(MovieWithGenres data) {
+                            bindMovie(data.movie, data.genres, picasso);
+                        }
+                    });
 
             mSub.set(sub);
         }
 
-        public void bindMovie(final Movie movie, Picasso picasso) {
+        public void bindMovie(final Movie movie, final Genres genres, Picasso picasso) {
             title.setText(movie.title);
             //director.setText(movie.directorsString());
             //actors.setText(movie.actorsString());
             releaseDate.setText(movie.releaseDate);
-
-            // FIXME:
-//            final Subscription genreSub = mGenres.observeOn(AndroidSchedulers.mainThread())
-//                    .subscribe(new Action1<Genres>() {
-//                        @Override
-//                        public void call(Genres genres) {
-//                            genre.setText(movie.genres(genres));
-//                        }
-//                    });
-//
-//            sub.add(genreSub);
+            genre.setText(movie.genres(genres));
 
             picasso.load(MyApplication.POSTERS_URL + movie.posterPath)
                     .resize(200, 200)
