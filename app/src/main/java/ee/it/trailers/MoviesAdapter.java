@@ -265,8 +265,8 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
             releaseDate.setText(movie.releaseDate);
             genre.setText(movie.genres(genres));
 
-            picasso.load(MyApplication.POSTERS_URL + movie.posterPath)
-                    .resize(200, 200)
+            picasso.load(MyApplication.POSTERS_URL_MINI + movie.posterPath)
+                    .resize(185, 185)
                     .centerCrop()
                     .into(poster);
         }
