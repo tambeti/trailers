@@ -217,8 +217,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
         ImageView poster;
         TextView title;
         TextView genre;
-        TextView director;
-        TextView actors;
         TextView releaseDate;
 
         public ViewHolder(final View view, final OnMovieSelectedListener listener) {
@@ -227,8 +225,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
             poster = (ImageView) view.findViewById(R.id.poster);
             title = (TextView) view.findViewById(R.id.title);
             genre = (TextView) view.findViewById(R.id.genre);
-            director = (TextView) view.findViewById(R.id.director);
-            actors = (TextView) view.findViewById(R.id.actors);
             releaseDate = (TextView) view.findViewById(R.id.release_date);
 
             view.setOnClickListener(new View.OnClickListener() {
@@ -266,8 +262,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
 
         public void bindMovie(final Movie movie, final Genres genres, Picasso picasso) {
             title.setText(movie.title);
-            //director.setText(movie.directorsString());
-            //actors.setText(movie.actorsString());
             releaseDate.setText(movie.releaseDate);
             genre.setText(movie.genres(genres));
 
