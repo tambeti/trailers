@@ -19,7 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import ee.it.trailers.tmdb.*;
+import ee.it.trailers.tmdb.DiscoverResult;
+import ee.it.trailers.tmdb.Genres;
 import ee.it.trailers.tmdb.Movie;
 import rx.Observable;
 import rx.Subscriber;

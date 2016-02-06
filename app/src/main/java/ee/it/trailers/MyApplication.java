@@ -22,7 +22,6 @@ import rx.schedulers.Schedulers;
 
 public class MyApplication extends Application {
     public static final String POSTERS_URL = "http://image.tmdb.org/t/p/w500";
-    public static final String YOUTUBE_URL = "https://www.youtube.com/watch?v=";
     private static final HttpUrl API_URL = HttpUrl.parse("https://api.themoviedb.org/3");
     private static final String TMDB_API_KEY = "5d93c9cc67db0baee560b7eccc07c08f";
     private OkHttpClient mHttpClient;
