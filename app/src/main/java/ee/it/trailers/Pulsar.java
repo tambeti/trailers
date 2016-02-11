@@ -53,7 +53,7 @@ public class Pulsar {
         mHttpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Request request, IOException e) {
-                Log.w(TAG, "Pulsar play failed:", e);
+                Log.w(TAG, "Quasar play failed:", e);
             }
 
             @Override
@@ -70,7 +70,7 @@ public class Pulsar {
         if (link == null) {
             return;
         }
-        String url = link.replace("plugin://plugin.video.pulsar", mBaseUrl.toString());
+        String url = link.replace("plugin://plugin.video.quasar", mBaseUrl.toString());
         Log.i(TAG, "url: " + url);
         final Request request = new Request.Builder()
                 .url(url)
