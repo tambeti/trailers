@@ -1,29 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical"
-              android:padding="10dp">
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="10dp">
 
     <LinearLayout
-        android:id="@+id/block1"
-        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_alignParentStart="true">
+        android:orientation="vertical">
 
         <ImageView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:id="@+id/poster"/>
 
         <GridLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:useDefaultMargins="true"
-            android:layout_weight="1"
             android:columnCount="2">
 
             <TextView
@@ -101,58 +95,63 @@
                 android:layout_row="4"
                 android:layout_column="1"/>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tagline"
+                android:layout_row="5"
+                android:layout_column="0"/>
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_gravity="fill_horizontal"
+                android:id="@+id/tagline"
+                android:layout_row="5"
+                android:layout_column="1"/>
+
         </GridLayout>
 
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/button_bar"
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center|bottom"
-        style="@android:style/ButtonBar"
-        android:layout_alignParentEnd="false"
-        android:layout_alignParentBottom="true">
-
-        <Button
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Trailer"
-            android:id="@+id/trailer"
-            android:layout_weight="1"
-            style="?android:attr/buttonBarButtonStyle"
-            />
-
-        <Space
-            android:layout_width="20dp"
-            android:layout_height="wrap_content"/>
-
-        <Button
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Play"
-            android:id="@+id/play"
-            android:layout_weight="1"
-            style="?android:attr/buttonBarButtonStyle"/>
-
-    </LinearLayout>
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/block1"
-        android:layout_above="@id/button_bar"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp">
-
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text=""
             android:id="@+id/plot"
             android:gravity="center_vertical"/>
-    </ScrollView>
 
-</RelativeLayout>
+        <LinearLayout
+            android:id="@+id/button_bar"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center|bottom"
+            style="@android:style/ButtonBar">
+
+            <Button
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Trailer"
+                android:id="@+id/trailer"
+                android:layout_weight="1"
+                style="?android:attr/buttonBarButtonStyle"
+                />
+
+            <Space
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Play"
+                android:id="@+id/play"
+                android:layout_weight="1"
+                style="?android:attr/buttonBarButtonStyle"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

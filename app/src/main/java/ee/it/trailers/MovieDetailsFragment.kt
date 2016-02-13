@@ -50,6 +50,7 @@ class MovieDetailsFragment : Fragment() {
         val director = view.findViewById(R.id.director) as TextView
         val writer = view.findViewById(R.id.writer) as TextView
         val cast = view.findViewById(R.id.cast) as TextView
+        val tagline = view.findViewById(R.id.tagline) as TextView
 
         val plot = view.findViewById(R.id.plot) as TextView
         val trailer = view.findViewById(R.id.trailer) as Button
@@ -80,6 +81,8 @@ class MovieDetailsFragment : Fragment() {
                             .take(10)
                             .map { it.name }
                             .joinToString()
+
+                    tagline.text = movie.tagline
 
                     movie.trailers.firstOrNull()?.let { firstTrailer ->
                         val url = mPulsar!!.trailerUrl(firstTrailer.source)
