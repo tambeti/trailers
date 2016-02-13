@@ -1,6 +1,13 @@
 <resources>
     <string name="app_name">Trailers</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="genre">Genre</string>
+    <string name="runtime">Runtime</string>
+    <string name="director">Director</string>
+    <string name="writer">Writer</string>
+    <string name="cast">Cast</string>
+    <string name="tagline">Tagline</string>
+    <string name="trailer">Trailer</string>
+    <string name="play">Play</string>
+    <string name="poster">poster</string>
 </resources>

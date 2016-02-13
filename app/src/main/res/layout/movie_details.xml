@@ -10,9 +10,11 @@
         android:orientation="vertical">
 
         <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/poster"/>
+            android:layout_width="500px"
+            android:layout_height="750px"
+            android:id="@+id/poster"
+            android:layout_gravity="center_horizontal"
+            android:contentDescription="@string/poster"/>
 
         <GridLayout
             android:layout_width="match_parent"
@@ -23,7 +25,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Genre"
+                android:text="@string/genre"
                 android:layout_row="0"
                 android:layout_column="0"/>
 
@@ -38,7 +40,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Runtime"
+                android:text="@string/runtime"
                 android:layout_row="1"
                 android:layout_column="0"/>
 
@@ -53,7 +55,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Director"
+                android:text="@string/director"
                 android:layout_row="2"
                 android:layout_column="0"/>
 
@@ -68,7 +70,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Writer"
+                android:text="@string/writer"
                 android:layout_row="3"
                 android:layout_column="0"/>
 
@@ -83,7 +85,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cast"
+                android:text="@string/cast"
                 android:layout_row="4"
                 android:layout_column="0"/>
 
@@ -98,7 +100,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tagline"
+                android:text="@string/tagline"
                 android:layout_row="5"
                 android:layout_column="0"/>
 
@@ -133,7 +135,7 @@
             <Button
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Trailer"
+                android:text="@string/trailer"
                 android:id="@+id/trailer"
                 android:layout_weight="1"
                 style="?android:attr/buttonBarButtonStyle"
@@ -146,7 +148,7 @@
             <Button
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Play"
+                android:text="@string/play"
                 android:id="@+id/play"
                 android:layout_weight="1"
                 style="?android:attr/buttonBarButtonStyle"/>

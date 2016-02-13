@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity(), MoviesFragment.OnMovieSelected {
     override fun onMovieSelected(movie: Movie) {
         toolbar.title = movie.title
 
-        val fragment = MovieDetailsFragment.newInstance(movie.id)
+        val fragment = MovieDetailsFragment.newInstance(movie)
         fragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)

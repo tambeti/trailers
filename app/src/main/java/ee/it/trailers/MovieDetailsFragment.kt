@@ -26,7 +26,7 @@ class MovieDetailsFragment : Fragment() {
         (activity.applicationContext as MyApplication).picasso
     }
 
-    private val movieId by lazy { arguments!!.getLong(KEY_ID) }
+    private val movie by lazy { arguments!!.getSerializable(KEY_MOVIE) as Movie }
 
     private var mPulsar: Pulsar? = null
 
@@ -58,10 +58,13 @@ class MovieDetailsFragment : Fragment() {
 
         trailer.isEnabled = false
 
-        movieDetails(movieId).subscribeOn(Schedulers.io()).
-                observeOn(AndroidSchedulers.mainThread())
+        plot.text = movie.overview
+        picasso.load(MyApplication.POSTERS_URL + movie.posterPath)
+                .into(poster)
+
+        movieDetails(movie.id).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { movie ->
-                    plot.text = movie.overview
                     runtime.text = "${movie.runtime} minutes"
                     genre.text = movie.genres
                             .map { it.name }
@@ -91,8 +94,6 @@ class MovieDetailsFragment : Fragment() {
                     }
 
                     play.setOnClickListener { mPulsar!!.play(movie.imdbId) }
-
-                    picasso.load(MyApplication.POSTERS_URL + movie.posterPath).into(poster)
                 }
     }
 
@@ -126,10 +127,10 @@ class MovieDetailsFragment : Fragment() {
     }
 
     companion object {
-        private val KEY_ID = "movie-details-id"
+        private val KEY_MOVIE = "movie-details-movie"
 
-        fun newInstance(movieId: Long) = MovieDetailsFragment().apply {
-            arguments = Bundle().apply { putLong(KEY_ID, movieId) }
+        fun newInstance(movie: Movie) = MovieDetailsFragment().apply {
+            arguments = Bundle().apply { putSerializable(KEY_MOVIE, movie) }
         }
     }
 }

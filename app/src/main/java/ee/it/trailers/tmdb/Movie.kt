@@ -1,8 +1,9 @@
 package ee.it.trailers.tmdb
 
 import android.util.JsonReader
+import java.io.Serializable
 
-class Movie {
+class Movie : Serializable {
     val id: Long
     val imdbId: String
     val title: String
