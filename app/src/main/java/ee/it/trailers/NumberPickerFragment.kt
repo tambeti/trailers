@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
 import android.app.DialogFragment
-import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -28,9 +27,7 @@ class NumberPickerFragment : DialogFragment() {
                     targetFragment.onActivityResult(targetRequestCode,
                             Activity.RESULT_OK, intent)
                 }
-                .setNegativeButton("Cancel", object: DialogInterface.OnClickListener {
-                    override fun onClick(dialog: DialogInterface, which: Int) {}
-                })
+                .setNegativeButton("Cancel", null)
                 .create()
     }
 

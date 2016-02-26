@@ -5,13 +5,11 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.app.DialogFragment
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import ee.it.trailers.tmdb.Genres
 import rx.android.schedulers.AndroidSchedulers
 import java.util.*
 
@@ -53,9 +51,7 @@ class GenrePickerFragment : DialogFragment() {
                             .map { it.tag as Int }
                     sendResults(list)
                 }
-                .setNegativeButton("Cancel", object: DialogInterface.OnClickListener {
-                    override fun onClick(dialog: DialogInterface, which: Int) {}
-                })
+                .setNegativeButton("Cancel", null)
                 .setNeutralButton("All") { dialog, which ->
                     sendResults(emptyList<Int>())
                 }

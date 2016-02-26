@@ -5,10 +5,10 @@ import android.app.Fragment
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.*
 import ee.it.trailers.tmdb.Movie
+import kotlinx.android.synthetic.main.movies_fragment.view.*
 import rx.Observable
 import java.util.*
 
@@ -31,9 +31,8 @@ class MoviesFragment : Fragment(), MoviesAdapter.OnMovieSelectedListener {
         try {
             mListener = activity as OnMovieSelected
         } catch (e: ClassCastException) {
-            throw ClassCastException(activity.toString() + " must implement OnArticleSelectedListener")
+            throw ClassCastException(activity.toString() + " must implement OnMovieSelected")
         }
-
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -44,7 +43,7 @@ class MoviesFragment : Fragment(), MoviesAdapter.OnMovieSelectedListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        (view.findViewById(R.id.movies_list) as RecyclerView).let {
+        view.movies_list.let {
             it.layoutManager = LinearLayoutManager(view.context)
             it.setHasFixedSize(true)
         }
@@ -78,27 +77,28 @@ class MoviesFragment : Fragment(), MoviesAdapter.OnMovieSelectedListener {
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.settings -> fragmentManager.beginTransaction()
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.settings -> {
+            fragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, SettingsFragment())
                     .addToBackStack(null)
                     .commit()
-            R.id.year_selector -> {
-                val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-                val fragment = NumberPickerFragment.newInstance(1920, currentYear, mSelectedYear)
-                fragment.setTargetFragment(this, REQUEST_CODE_PICK_YEAR)
-                fragment.show(fragmentManager, "year-picker")
-            }
-            R.id.genre_selector -> {
-                val fragment = GenrePickerFragment.newInstance(mGenres)
-                fragment.setTargetFragment(this, REQUEST_CODE_PICK_GENRE)
-                fragment.show(fragmentManager, "genre-picker")
-            }
-            else -> return super.onOptionsItemSelected(item)
+            true
         }
-
-        return true
+        R.id.year_selector -> {
+            val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+            val fragment = NumberPickerFragment.newInstance(1920, currentYear, mSelectedYear)
+            fragment.setTargetFragment(this, REQUEST_CODE_PICK_YEAR)
+            fragment.show(fragmentManager, "year-picker")
+            true
+        }
+        R.id.genre_selector -> {
+            val fragment = GenrePickerFragment.newInstance(mGenres)
+            fragment.setTargetFragment(this, REQUEST_CODE_PICK_GENRE)
+            fragment.show(fragmentManager, "genre-picker")
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
@@ -133,7 +133,7 @@ class MoviesFragment : Fragment(), MoviesAdapter.OnMovieSelectedListener {
     }
 
     private fun reloadData() {
-        (view.findViewById(R.id.movies_list) as RecyclerView).let {
+        view.movies_list.let {
             val app = activity.applicationContext as MyApplication
             it.adapter = MoviesAdapter(app, mSelectedYear, mGenres, this)
         }

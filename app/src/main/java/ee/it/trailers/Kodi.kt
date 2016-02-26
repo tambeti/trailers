@@ -3,16 +3,10 @@ package ee.it.trailers
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-
-import com.squareup.okhttp.Callback
 import com.squareup.okhttp.OkHttpClient
-import com.squareup.okhttp.Request
-import com.squareup.okhttp.Response
-
 import org.json.JSONException
 import org.json.JSONObject
-
-import java.io.IOException
+import rx.schedulers.Schedulers
 
 object Kodi {
     internal fun play(context: Context, httpClient: OkHttpClient, url: String) {
@@ -43,21 +37,13 @@ object Kodi {
         val kodiUrl = "http://${Prefs.kodiUrl(context)}/jsonrpc?request=$json"
         Log.i("foobar", "play kodi url: " + kodiUrl)
 
-        val request = Request.Builder()
-                .url(kodiUrl)
-                .build()
-
-        httpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(request: Request, e: IOException) {
-                Log.w("foobar", "http call failed", e)
-                e.printStackTrace()
-            }
-
-            @Throws(IOException::class)
-            override fun onResponse(response: Response) {
-                val body = response.body().string()
-                Log.i("foobar", "body: " + body)
-            }
+        httpClient.get(kodiUrl)
+                .subscribeOn(Schedulers.io())
+                .subscribe({ response ->
+            val body = response.body().string()
+            Log.i("foobar", "body: " + body)
+        }, { e ->
+            Log.w("foobar", "http call failed", e)
         })
     }
 }

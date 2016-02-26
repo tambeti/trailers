@@ -1,16 +1,21 @@
 package ee.it.trailers
 
+import android.app.Activity
 import android.app.Fragment
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.JsonReader
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
+import android.widget.Toast
 import com.squareup.okhttp.Request
 import ee.it.trailers.tmdb.Movie
+import kotlinx.android.synthetic.main.movie_details.*
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
@@ -44,6 +49,7 @@ class MovieDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        /*
         val poster = view.findViewById(R.id.poster) as ImageView
         val genre = view.findViewById(R.id.genres) as TextView
         val runtime = view.findViewById(R.id.runtime) as TextView
@@ -55,6 +61,7 @@ class MovieDetailsFragment : Fragment() {
         val plot = view.findViewById(R.id.plot) as TextView
         val trailer = view.findViewById(R.id.trailer) as Button
         val play = view.findViewById(R.id.play) as Button
+        */
 
         trailer.isEnabled = false
 
@@ -66,7 +73,7 @@ class MovieDetailsFragment : Fragment() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { movie ->
                     runtime.text = "${movie.runtime} minutes"
-                    genre.text = movie.genres
+                    genres.text = movie.genres
                             .map { it.name }
                             .joinToString()
 
@@ -93,8 +100,47 @@ class MovieDetailsFragment : Fragment() {
                         trailer.setOnClickListener { Kodi.play(activity, httpClient, url) }
                     }
 
-                    play.setOnClickListener { mPulsar!!.play(movie.imdbId) }
+                    play.setOnClickListener {
+                        val f = TorrentPickerFragment.newInstance(movie)
+                        f.setTargetFragment(this, REQUEST_CODE_TORRENT)
+                        f.show(fragmentManager, "dialog")
+                    }
                 }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when (requestCode) {
+            REQUEST_CODE_TORRENT -> {
+                data?.let {
+                    val name = it.getStringExtra(TorrentPickerFragment.KEY_NAME)
+                    val magnet = it.getStringExtra(TorrentPickerFragment.KEY_MAGNET)
+                    val action = it.getSerializableExtra(TorrentPickerFragment.KEY_ACTION) as TorrentPickerFragment.Action
+
+                    println("Selected $name")
+                    when (action) {
+                        TorrentPickerFragment.Action.PLAY -> mPulsar?.playUri(magnet!!)
+                        TorrentPickerFragment.Action.COPY -> open(magnet!!)
+                    }
+
+                }
+            }
+            else -> super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    private fun open(uri: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+        } catch (e: ActivityNotFoundException) {
+            copy(uri)
+        }
+    }
+
+    private fun copy(uri: String) {
+        val clipboard = activity.getSystemService(Activity.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.primaryClip = ClipData.newPlainText("label", uri)
+        Toast.makeText(activity, R.string.magnet_copied, Toast.LENGTH_SHORT)
+                .show()
     }
 
     private fun movieDetails(id: Long): Observable<Movie> {
@@ -128,6 +174,7 @@ class MovieDetailsFragment : Fragment() {
 
     companion object {
         private val KEY_MOVIE = "movie-details-movie"
+        private val REQUEST_CODE_TORRENT = 1
 
         fun newInstance(movie: Movie) = MovieDetailsFragment().apply {
             arguments = Bundle().apply { putSerializable(KEY_MOVIE, movie) }

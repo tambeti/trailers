@@ -10,4 +10,5 @@
     <string name="trailer">Trailer</string>
     <string name="play">Play</string>
     <string name="poster">poster</string>
+    <string name="magnet_copied">Magnet URL copied</string>
 </resources>

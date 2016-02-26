@@ -2,24 +2,19 @@ package ee.it.trailers
 
 import android.support.v7.widget.RecyclerView
 import android.util.JsonReader
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
-import com.squareup.okhttp.OkHttpClient
-import com.squareup.okhttp.Request
 import com.squareup.picasso.Picasso
 import ee.it.trailers.tmdb.DiscoverResult
 import ee.it.trailers.tmdb.Genres
 import ee.it.trailers.tmdb.Movie
+import kotlinx.android.synthetic.main.movie_item.view.*
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
 import rx.subscriptions.SerialSubscription
 import rx.subscriptions.Subscriptions
-import java.io.IOException
 
 class MoviesAdapter(app: MyApplication, private val mYear: Int, private val mGenreFilter: List<Int>,
                     private val mMovieSelectedListener: MoviesAdapter.OnMovieSelectedListener):
@@ -29,18 +24,13 @@ class MoviesAdapter(app: MyApplication, private val mYear: Int, private val mGen
     }
 
     private val PAGE_SIZE = 20
-    private val mHttpClient: OkHttpClient
-    private val mPicasso: Picasso
-    private val mGenres: Observable<Genres>
-    private val mObservables: MutableList<Observable<List<Movie>>> = mutableListOf()
-    private var mCount: Int = 0
+    private val observables: MutableList<Observable<List<Movie>>> = mutableListOf()
+    private var count: Int = 0
+    private val httpClient by lazy { app.httpClient }
+    private val picasso by lazy { app.picasso }
+    private val genres by lazy { app.genres }
 
     init {
-        Log.i("foobar", "creating adapter")
-        mHttpClient = app.httpClient
-        mPicasso = app.picasso
-        mGenres = app.genres
-
         initObservables()
     }
 
@@ -51,13 +41,13 @@ class MoviesAdapter(app: MyApplication, private val mYear: Int, private val mGen
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bindMovie(loadMovie(position), mGenres, mPicasso)
+        holder.bindMovie(loadMovie(position), genres, picasso)
     }
 
-    override fun getItemCount() = mCount
+    override fun getItemCount() = count
 
     override fun onViewRecycled(holder: ViewHolder?) {
-        holder!!.reset(mPicasso)
+        holder!!.reset(picasso)
         super.onViewRecycled(holder)
     }
 
@@ -65,7 +55,7 @@ class MoviesAdapter(app: MyApplication, private val mYear: Int, private val mGen
         val page = position / PAGE_SIZE
         val positionInPage = position % PAGE_SIZE
 
-        return mObservables[page].map { movies -> movies[positionInPage] }
+        return observables[page].map { movies -> movies[positionInPage] }
     }
 
     private fun initObservables() {
@@ -73,17 +63,17 @@ class MoviesAdapter(app: MyApplication, private val mYear: Int, private val mGen
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { discoverResult ->
-                    mCount = discoverResult.totalResults
+                    count = discoverResult.totalResults
 
                     val page0 = Observable.just(discoverResult)
                             .map { discoverResult -> discoverResult.results }
                             .cache(1)
 
-                    mObservables.add(page0)
+                    observables.add(page0)
 
                     for (page in 0..discoverResult.totalPages - 1) {
                         val o = loadPage(page + 2).cache(1)
-                        mObservables.add(o)
+                        observables.add(o)
                     }
 
                     notifyDataSetChanged()
@@ -98,60 +88,36 @@ class MoviesAdapter(app: MyApplication, private val mYear: Int, private val mGen
     }
 
     private fun discoverMovies(page: Int = 0): Observable<DiscoverResult> {
-        return Observable.create { subscriber ->
-            Log.i("foobar", "Loading page " + page)
-            val urlBuilder = MyApplication.apiUrlBuilder()
-                    .addPathSegment("discover")
-                    .addPathSegment("movie")
-                    .addQueryParameter("primary_release_year", Integer.toString(mYear))
-                    .addQueryParameter("vote_count.gte", "50")
-                    .addQueryParameter("language", "en")
-                    .addQueryParameter("sort_by", "primary_release_date.asc")
+        val urlBuilder = MyApplication.apiUrlBuilder()
+                .addPathSegment("discover")
+                .addPathSegment("movie")
+                .addQueryParameter("primary_release_year", Integer.toString(mYear))
+                .addQueryParameter("vote_count.gte", "50")
+                .addQueryParameter("language", "en")
+                .addQueryParameter("sort_by", "primary_release_date.asc")
 
-            if (!mGenreFilter.isEmpty()) {
-                urlBuilder.addQueryParameter("with_genres", mGenreFilter.joinToString(","))
-            }
-
-            if (page > 0) {
-                urlBuilder.addQueryParameter("page", Integer.toString(page))
-            }
-
-            val request = Request.Builder()
-                    .url(urlBuilder.build())
-                    .build()
-
-            try {
-                val response = mHttpClient.newCall(request).execute()
-                val result = JsonReader(response.body().charStream()).use {
-                    DiscoverResult.Builder(it).build()
-                }
-                if (!subscriber.isUnsubscribed) {
-                    subscriber.onNext(result)
-                    subscriber.onCompleted()
-                }
-            } catch (e: IOException) {
-                if (!subscriber.isUnsubscribed) {
-                    subscriber.onError(e)
-                }
-            }
+        if (!mGenreFilter.isEmpty()) {
+            urlBuilder.addQueryParameter("with_genres", mGenreFilter.joinToString(","))
         }
+
+        if (page > 0) {
+            urlBuilder.addQueryParameter("page", Integer.toString(page))
+        }
+
+        return httpClient.get(urlBuilder.build().toString())
+                .map { response ->
+                    JsonReader(response.body().charStream()).use {
+                        DiscoverResult.Builder(it).build()
+                    }
+                }
+                .toObservable()
     }
 
-    class ViewHolder(view: View, listener: OnMovieSelectedListener?) : RecyclerView.ViewHolder(view) {
+    class ViewHolder(val view: View, listener: OnMovieSelectedListener?) : RecyclerView.ViewHolder(view) {
         private val mSub = SerialSubscription()
         private var mObservable = Observable.empty<Movie>()
 
-        val poster: ImageView
-        val title: TextView
-        val genre: TextView
-        val releaseDate: TextView
-
         init {
-            poster = view.findViewById(R.id.poster) as ImageView
-            title = view.findViewById(R.id.title) as TextView
-            genre = view.findViewById(R.id.genre) as TextView
-            releaseDate = view.findViewById(R.id.release_date) as TextView
-
             view.setOnClickListener {
                 listener?.onMovieSelected(mObservable)
             }
@@ -161,7 +127,7 @@ class MoviesAdapter(app: MyApplication, private val mYear: Int, private val mGen
                       picasso: Picasso) {
             mObservable = movieObservable
 
-            val sub = Observable.zip(genresObservable, movieObservable) { genres, movie -> Pair(movie, genres) }
+            val sub = Observable.zip(genresObservable, movieObservable) { genres, movie -> movie to genres }
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe { data -> bindMovie(data.first, data.second, picasso) }
@@ -170,20 +136,20 @@ class MoviesAdapter(app: MyApplication, private val mYear: Int, private val mGen
         }
 
         fun bindMovie(movie: Movie, genres: Genres, picasso: Picasso) {
-            title.text = movie.title
-            releaseDate.text = movie.releaseDate
-            genre.text = movie.genreIds
+            view.title.text = movie.title
+            view.release_date.text = movie.releaseDate
+            view.genre.text = movie.genreIds
                     .map { genres.name(it)?.name }
                     .joinToString(" / ")
 
             picasso.load(MyApplication.POSTERS_URL_MINI + movie.posterPath)
                     .resize(185, 185)
                     .centerCrop()
-                    .into(poster)
+                    .into(view.poster)
         }
 
         fun reset(picasso: Picasso) {
-            picasso.cancelRequest(poster)
+            picasso.cancelRequest(view.poster)
             mSub.set(Subscriptions.empty())
             mObservable = Observable.empty<Movie>()
         }

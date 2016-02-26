@@ -2,17 +2,15 @@ package ee.it.trailers
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.Toolbar
 import ee.it.trailers.tmdb.Movie
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), MoviesFragment.OnMovieSelected {
-    private val toolbar: Toolbar by lazy { findViewById(R.id.my_toolbar) as Toolbar }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         super.setContentView(R.layout.activity_main)
 
-        setSupportActionBar(toolbar)
+        setSupportActionBar(my_toolbar)
 
         if (savedInstanceState == null) {
             fragmentManager.beginTransaction()
@@ -26,7 +24,7 @@ class MainActivity : AppCompatActivity(), MoviesFragment.OnMovieSelected {
         val count = fm.backStackEntryCount
         if (count > 0) {
             if (count == 1) {
-                toolbar.setTitle(R.string.app_name)
+                my_toolbar.setTitle(R.string.app_name)
             }
 
             fm.popBackStack()
@@ -36,7 +34,7 @@ class MainActivity : AppCompatActivity(), MoviesFragment.OnMovieSelected {
     }
 
     override fun onMovieSelected(movie: Movie) {
-        toolbar.title = movie.title
+        my_toolbar.title = movie.title
 
         val fragment = MovieDetailsFragment.newInstance(movie)
         fragmentManager.beginTransaction()
