@@ -42,7 +42,11 @@ fun Tpbparse(stream: InputStream, url: String): List<Torrent> {
                 val size = row.child(1)
                         ?.getElementsByClass("detDesc")
                         ?.map {
-                            sizeRe.find(it.text())?.groups?.get(1)?.value
+                            sizeRe.find(it.text())
+                                    ?.groups
+                                    ?.get(1)
+                                    ?.value
+                                    ?.replace("iB", "")
                         }
                         ?.first()
                         ?: ""
