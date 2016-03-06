@@ -49,22 +49,7 @@ class MovieDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        /*
-        val poster = view.findViewById(R.id.poster) as ImageView
-        val genre = view.findViewById(R.id.genres) as TextView
-        val runtime = view.findViewById(R.id.runtime) as TextView
-        val director = view.findViewById(R.id.director) as TextView
-        val writer = view.findViewById(R.id.writer) as TextView
-        val cast = view.findViewById(R.id.cast) as TextView
-        val tagline = view.findViewById(R.id.tagline) as TextView
-
-        val plot = view.findViewById(R.id.plot) as TextView
-        val trailer = view.findViewById(R.id.trailer) as Button
-        val play = view.findViewById(R.id.play) as Button
-        */
-
         trailer.isEnabled = false
-
         plot.text = movie.overview
         picasso.load(MyApplication.POSTERS_URL + movie.posterPath)
                 .into(poster)
