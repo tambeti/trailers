@@ -1,39 +1,25 @@
 package ee.it.trailers
 
-import android.app.Activity
-import android.app.Fragment
 import android.content.Intent
 import android.os.Bundle
+import android.support.v4.app.Fragment
+import android.support.v4.app.LoaderManager
+import android.support.v4.content.Loader
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
 import android.view.*
 import ee.it.trailers.tmdb.Movie
 import kotlinx.android.synthetic.main.movies_fragment.view.*
-import rx.Observable
-import java.util.*
 
-class MoviesFragment : Fragment(), MoviesAdapter.OnMovieSelectedListener {
+class MoviesFragment : Fragment(), MoviesView,
+        LoaderManager.LoaderCallbacks<MoviesPresenter> {
     companion object {
         private val REQUEST_CODE_PICK_YEAR = 1
         private val REQUEST_CODE_PICK_GENRE = 2
     }
 
-    interface OnMovieSelected {
-        fun onMovieSelected(movie: Movie)
-    }
-
-    private val mGenres: MutableList<Int> = mutableListOf()
-    private var mListener: OnMovieSelected? = null
-    private var mSelectedYear: Int = 0
-
-    override fun onAttach(activity: Activity) {
-        super.onAttach(activity)
-        try {
-            mListener = activity as OnMovieSelected
-        } catch (e: ClassCastException) {
-            throw ClassCastException(activity.toString() + " must implement OnMovieSelected")
-        }
-    }
+    private lateinit var adapter: MoviesAdapter
+    private var presenter: MoviesPresenter? = null
+    private var year: String = ""
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -54,15 +40,19 @@ class MoviesFragment : Fragment(), MoviesAdapter.OnMovieSelectedListener {
 
         setHasOptionsMenu(true)
 
-        activity.invalidateOptionsMenu()
-        mGenres.clear()
-        mGenres.addAll(Prefs.genres(activity))
-        mSelectedYear = Prefs.year(activity)
+        loaderManager.initLoader(1, null, this)
     }
 
     override fun onResume() {
         super.onResume()
-        reloadData()
+        presenter!!.bindView(this)
+
+        activity.title = getString(R.string.app_name)
+    }
+
+    override fun onPause() {
+        presenter!!.unbindView()
+        super.onPause()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -73,29 +63,21 @@ class MoviesFragment : Fragment(), MoviesAdapter.OnMovieSelectedListener {
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
         menu.findItem(R.id.year_selector).apply {
-            title = mSelectedYear.toString()
+            title = year
         }
     }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
         R.id.settings -> {
-            fragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, SettingsFragment())
-                    .addToBackStack(null)
-                    .commit()
+            presenter?.onPreferencesClicked()
             true
         }
         R.id.year_selector -> {
-            val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-            val fragment = NumberPickerFragment.newInstance(1920, currentYear, mSelectedYear)
-            fragment.setTargetFragment(this, REQUEST_CODE_PICK_YEAR)
-            fragment.show(fragmentManager, "year-picker")
+            presenter?.onYearClicked()
             true
         }
         R.id.genre_selector -> {
-            val fragment = GenrePickerFragment.newInstance(mGenres)
-            fragment.setTargetFragment(this, REQUEST_CODE_PICK_GENRE)
-            fragment.show(fragmentManager, "genre-picker")
+            presenter?.onGenresClicked()
             true
         }
         else -> super.onOptionsItemSelected(item)
@@ -104,38 +86,65 @@ class MoviesFragment : Fragment(), MoviesAdapter.OnMovieSelectedListener {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         when (requestCode) {
             REQUEST_CODE_PICK_YEAR -> {
-                val year = data.getIntExtra(NumberPickerFragment.RESULT, -1)
-                Prefs.year(activity, year)
-                activity.invalidateOptionsMenu()
-                onYearChanged(year)
+                presenter?.setYear(data.getIntExtra(NumberPickerFragment.RESULT, -1))
             }
             REQUEST_CODE_PICK_GENRE -> {
-                val genres = data.getIntArrayExtra(GenrePickerFragment.RESULT)
-                mGenres.clear()
-                genres.toCollection(mGenres)
-                Log.i("foobar", "genres: $mGenres")
-                Prefs.genres(activity, mGenres)
-                reloadData()
+                val array = data.getIntArrayExtra(GenrePickerFragment.RESULT)
+                presenter?.setGenres(array.toList())
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
-    override fun onMovieSelected(movieObservable: Observable<Movie>) {
-        movieObservable.subscribe { movie -> mListener!!.onMovieSelected(movie) }
+    override fun updateMovies(data: MoviesData) {
+        adapter.replaceData(data)
     }
 
-    private fun onYearChanged(year: Int) {
-        if (mSelectedYear != year) {
-            mSelectedYear = year
-            reloadData()
-        }
+    override fun updateYear(year: String) {
+        this.year = year
+        activity.invalidateOptionsMenu()
     }
 
-    private fun reloadData() {
-        view.movies_list.let {
-            val app = activity.applicationContext as MyApplication
-            it.adapter = MoviesAdapter(app, mSelectedYear, mGenres, this)
-        }
+    override fun showMovieDetails(movie: Movie) {
+        val fragment = MovieDetailsFragment.newInstance(movie)
+        fragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit()
+    }
+
+    override fun showPreferences() {
+        fragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, SettingsFragment())
+                .addToBackStack(null)
+                .commit()
+    }
+
+    override fun showYearPicker(from: Int, to: Int, selected: Int) {
+        val fragment = NumberPickerFragment.newInstance(from, to, selected)
+        fragment.setTargetFragment(this, REQUEST_CODE_PICK_YEAR)
+        fragment.show(fragmentManager, "year-picker")
+    }
+
+    override fun showGenrePicker(selected: List<Int>) {
+        val fragment = GenrePickerFragment.newInstance(selected)
+        fragment.setTargetFragment(this, REQUEST_CODE_PICK_GENRE)
+        fragment.show(fragmentManager, "genre-picker")
+    }
+
+    override fun onCreateLoader(id: Int, args: Bundle?): Loader<MoviesPresenter> {
+        return PresenterLoader(activity) { MoviesPresenter(activity) }
+    }
+
+    override fun onLoadFinished(loader: Loader<MoviesPresenter>, presenter: MoviesPresenter) {
+        this.presenter = presenter
+
+        val app = activity.applicationContext as MyApplication
+        adapter = MoviesAdapter(app, presenter)
+        view?.movies_list?.adapter = adapter
+    }
+
+    override fun onLoaderReset(loader: Loader<MoviesPresenter>) {
+        presenter = null
     }
 }

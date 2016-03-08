@@ -138,6 +138,7 @@
                 android:text="@string/trailer"
                 android:id="@+id/trailer"
                 android:layout_weight="1"
+                android:enabled="false"
                 style="?android:attr/buttonBarButtonStyle"
                 />
 

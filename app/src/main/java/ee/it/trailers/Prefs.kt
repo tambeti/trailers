@@ -3,6 +3,8 @@ package ee.it.trailers
 import android.content.Context
 import android.preference.PreferenceManager
 import android.util.Log
+import com.f2prateek.rx.preferences.RxSharedPreferences
+import rx.Observable
 
 object Prefs {
     private val KEY_KODI_IP = "kodi_ip"
@@ -32,6 +34,14 @@ object Prefs {
     internal fun year(context: Context) = PreferenceManager.getDefaultSharedPreferences(context)
             .getInt(KEY_YEAR, 2014)
 
+    fun yearO(context: Context): Observable<Int> {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val rxPrefs = RxSharedPreferences.create(prefs)
+
+        return rxPrefs.getInteger(KEY_YEAR, 2014)
+                .asObservable()
+    }
+
     internal fun year(context: Context, value: Int) {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
@@ -42,6 +52,19 @@ object Prefs {
     internal fun genres(context: Context) = PreferenceManager.getDefaultSharedPreferences(context)
                 .getStringSet(KEY_GENRES, emptySet<String>())
                 .map { it.toInt() }
+
+    fun generesO(context: Context): Observable<Set<Int>> {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val rxPrefs = RxSharedPreferences.create(prefs)
+
+        return rxPrefs.getStringSet(KEY_GENRES, emptySet())
+                .asObservable()
+                .map { set ->
+                    set.map {
+                        it.toInt()
+                    }.toSet()
+                }
+    }
 
     internal fun genres(context: Context, value: List<Int>) {
         var set = value.map { it.toString() }
